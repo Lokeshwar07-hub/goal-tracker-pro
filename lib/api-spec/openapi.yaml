@@ -3,20 +3,38 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AtomQuest Goal Setting & Tracking Portal API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: users
+    description: User management
+  - name: goals
+    description: Goal management
+  - name: shared-goals
+    description: Shared goal operations
+  - name: quarterly
+    description: Quarterly cycle management
+  - name: notifications
+    description: Notification operations
+  - name: audit
+    description: Audit log operations
+  - name: analytics
+    description: Analytics and reporting
+  - name: admin
+    description: Admin operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +42,1493 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ───────────────────────────────────────────────
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  # ─── USERS ──────────────────────────────────────────────
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users (admin/manager)
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: managerId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /users/my-team:
+    get:
+      operationId: getMyTeam
+      tags: [users]
+      summary: Get team members for current manager
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  # ─── GOALS ──────────────────────────────────────────────
+  /goals:
+    get:
+      operationId: listGoals
+      tags: [goals]
+      summary: List goals (filtered by role context)
+      parameters:
+        - name: employeeId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: approvalStatus
+          in: query
+          schema:
+            type: string
+        - name: quarter
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: thrustArea
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Goal"
+    post:
+      operationId: createGoal
+      tags: [goals]
+      summary: Create a new goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalInput"
+      responses:
+        "201":
+          description: Goal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}:
+    get:
+      operationId: getGoal
+      tags: [goals]
+      summary: Get a goal by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Goal found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateGoal
+      tags: [goals]
+      summary: Update a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+    delete:
+      operationId: deleteGoal
+      tags: [goals]
+      summary: Delete a draft goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /goals/{id}/submit:
+    post:
+      operationId: submitGoal
+      tags: [goals]
+      summary: Submit a draft goal for approval
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}/approve:
+    post:
+      operationId: approveGoal
+      tags: [goals]
+      summary: Approve a goal (manager)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalReviewInput"
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}/reject:
+    post:
+      operationId: rejectGoal
+      tags: [goals]
+      summary: Reject a goal (manager)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalReviewInput"
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}/return:
+    post:
+      operationId: returnGoal
+      tags: [goals]
+      summary: Return goal for rework (manager)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoalReviewInput"
+      responses:
+        "200":
+          description: Returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}/unlock:
+    post:
+      operationId: unlockGoal
+      tags: [goals]
+      summary: Unlock a locked goal (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unlocked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}/quarterly-update:
+    post:
+      operationId: addQuarterlyUpdate
+      tags: [goals]
+      summary: Add or update quarterly achievement
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuarterlyUpdateInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  /goals/{id}/comments:
+    post:
+      operationId: addGoalComment
+      tags: [goals]
+      summary: Add a comment to a goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "200":
+          description: Comment added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Goal"
+
+  # ─── SHARED GOALS ───────────────────────────────────────
+  /shared-goals:
+    get:
+      operationId: listSharedGoals
+      tags: [shared-goals]
+      summary: List shared/departmental goals
+      responses:
+        "200":
+          description: List of shared goals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SharedGoal"
+    post:
+      operationId: createSharedGoal
+      tags: [shared-goals]
+      summary: Create a shared goal (manager/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharedGoalInput"
+      responses:
+        "201":
+          description: Shared goal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedGoal"
+
+  /shared-goals/{id}:
+    get:
+      operationId: getSharedGoal
+      tags: [shared-goals]
+      summary: Get a shared goal by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Shared goal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedGoal"
+    patch:
+      operationId: updateSharedGoal
+      tags: [shared-goals]
+      summary: Update a shared goal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SharedGoalUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SharedGoal"
+
+  # ─── QUARTERLY CYCLES ───────────────────────────────────
+  /quarters:
+    get:
+      operationId: listQuarters
+      tags: [quarterly]
+      summary: List all quarters and their active status
+      responses:
+        "200":
+          description: List of quarters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Quarter"
+    post:
+      operationId: createQuarter
+      tags: [quarterly]
+      summary: Create a new quarter (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuarterInput"
+      responses:
+        "201":
+          description: Quarter created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quarter"
+
+  /quarters/{id}:
+    patch:
+      operationId: updateQuarter
+      tags: [quarterly]
+      summary: Update quarter (admin — toggle active, override)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuarterUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Quarter"
+
+  # ─── NOTIFICATIONS ──────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Get notifications for current user
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{id}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked read
+
+  # ─── AUDIT LOGS ─────────────────────────────────────────
+  /audit-logs:
+    get:
+      operationId: listAuditLogs
+      tags: [audit]
+      summary: List audit logs (admin/manager)
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: integer
+        - name: goalId
+          in: query
+          schema:
+            type: integer
+        - name: action
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+        - name: to
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  # ─── ANALYTICS ──────────────────────────────────────────
+  /analytics/dashboard-summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [analytics]
+      summary: Get role-based dashboard summary stats
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /analytics/goal-completion:
+    get:
+      operationId: getGoalCompletion
+      tags: [analytics]
+      summary: Goal completion rates by department/quarter
+      parameters:
+        - name: quarter
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Goal completion data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompletionStat"
+
+  /analytics/department-performance:
+    get:
+      operationId: getDepartmentPerformance
+      tags: [analytics]
+      summary: Department-level performance overview
+      parameters:
+        - name: quarter
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Department performance
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeptPerformance"
+
+  /analytics/employee-scores:
+    get:
+      operationId: getEmployeeScores
+      tags: [analytics]
+      summary: Employee weighted scores and rankings
+      parameters:
+        - name: quarter
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: managerId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Employee scores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EmployeeScore"
+
+  /analytics/pending-actions:
+    get:
+      operationId: getPendingActions
+      tags: [analytics]
+      summary: Pending approvals, submissions, and check-ins
+      responses:
+        "200":
+          description: Pending actions summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingActions"
+
+  /analytics/quarter-trend:
+    get:
+      operationId: getQuarterTrend
+      tags: [analytics]
+      summary: Quarter-on-quarter performance trend
+      parameters:
+        - name: employeeId
+          in: query
+          schema:
+            type: integer
+        - name: department
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Trend data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TrendPoint"
+
+  /analytics/uom-breakdown:
+    get:
+      operationId: getUomBreakdown
+      tags: [analytics]
+      summary: Goals breakdown by unit of measurement
+      parameters:
+        - name: quarter
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: UoM breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UomStat"
+
+  # ─── REPORTS ────────────────────────────────────────────
+  /reports/export:
+    get:
+      operationId: exportReport
+      tags: [analytics]
+      summary: Export goals report as CSV
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [csv]
+        - name: quarter
+          in: query
+          schema:
+            type: string
+        - name: department
+          in: query
+          schema:
+            type: string
+        - name: employeeId
+          in: query
+          schema:
+            type: integer
+        - name: managerId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV export
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  # ─── ADMIN ──────────────────────────────────────────────
+  /admin/departments:
+    get:
+      operationId: listDepartments
+      tags: [admin]
+      summary: List all departments
+      responses:
+        "200":
+          description: Departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Department"
+    post:
+      operationId: createDepartment
+      tags: [admin]
+      summary: Create a department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DepartmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+
+  /admin/escalations:
+    get:
+      operationId: listEscalations
+      tags: [admin]
+      summary: List escalation logs
+      responses:
+        "200":
+          description: Escalation logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Escalation"
+
+# ─── COMPONENTS ─────────────────────────────────────────────────────────────
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # ── Auth ────────────────────────────────────────────
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+
+    AuthResponse:
+      type: object
+      required: [token, user]
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+
+    # ── User ────────────────────────────────────────────
+    User:
+      type: object
+      required: [id, name, email, role, department, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [employee, manager, admin]
+        department:
+          type: string
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    UserInput:
+      type: object
+      required: [name, email, password, role, department]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        role:
+          type: string
+          enum: [employee, manager, admin]
+        department:
+          type: string
+        managerId:
+          type: ["integer", "null"]
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        role:
+          type: string
+          enum: [employee, manager, admin]
+        department:
+          type: string
+        managerId:
+          type: ["integer", "null"]
+
+    # ── Goal ────────────────────────────────────────────
+    Goal:
+      type: object
+      required: [id, employeeId, thrustArea, goalTitle, goalDescription, unitOfMeasurement, target, weightage, approvalStatus, lockStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        employeeId:
+          type: integer
+        employeeName:
+          type: ["string", "null"]
+        thrustArea:
+          type: string
+        goalTitle:
+          type: string
+        goalDescription:
+          type: string
+        unitOfMeasurement:
+          type: string
+          enum: [numeric, percentage, timeline, zero_based]
+        scoreType:
+          type: string
+          enum: [higher_is_better, lower_is_better]
+        target:
+          type: number
+        deadline:
+          type: ["string", "null"]
+          format: date
+        weightage:
+          type: number
+        achievement:
+          type: ["number", "null"]
+        progressScore:
+          type: ["number", "null"]
+        approvalStatus:
+          type: string
+          enum: [draft, pending, approved, rejected, returned]
+        lockStatus:
+          type: boolean
+        quarter:
+          type: ["string", "null"]
+        quarterlyUpdates:
+          type: array
+          items:
+            $ref: "#/components/schemas/QuarterlyUpdate"
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Comment"
+        isShared:
+          type: boolean
+        sharedGoalId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: ["string", "null"]
+          format: date-time
+
+    GoalInput:
+      type: object
+      required: [thrustArea, goalTitle, goalDescription, unitOfMeasurement, target, weightage]
+      properties:
+        thrustArea:
+          type: string
+        goalTitle:
+          type: string
+        goalDescription:
+          type: string
+        unitOfMeasurement:
+          type: string
+          enum: [numeric, percentage, timeline, zero_based]
+        scoreType:
+          type: string
+          enum: [higher_is_better, lower_is_better]
+        target:
+          type: number
+        deadline:
+          type: string
+          format: date
+        weightage:
+          type: number
+        quarter:
+          type: string
+
+    GoalUpdate:
+      type: object
+      properties:
+        thrustArea:
+          type: string
+        goalTitle:
+          type: string
+        goalDescription:
+          type: string
+        unitOfMeasurement:
+          type: string
+          enum: [numeric, percentage, timeline, zero_based]
+        scoreType:
+          type: string
+          enum: [higher_is_better, lower_is_better]
+        target:
+          type: number
+        deadline:
+          type: string
+          format: date
+        weightage:
+          type: number
+        achievement:
+          type: number
+
+    GoalReviewInput:
+      type: object
+      required: [comment]
+      properties:
+        comment:
+          type: string
+        targetOverride:
+          type: ["number", "null"]
+        weightageOverride:
+          type: ["number", "null"]
+
+    QuarterlyUpdate:
+      type: object
+      required: [quarter, achievement, progressStatus, updatedAt]
+      properties:
+        quarter:
+          type: string
+        achievement:
+          type: number
+        progressStatus:
+          type: string
+          enum: [not_started, on_track, completed, behind]
+        progressScore:
+          type: ["number", "null"]
+        managerComment:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+          format: date-time
+
+    QuarterlyUpdateInput:
+      type: object
+      required: [quarter, achievement, progressStatus]
+      properties:
+        quarter:
+          type: string
+        achievement:
+          type: number
+        progressStatus:
+          type: string
+          enum: [not_started, on_track, completed, behind]
+
+    Comment:
+      type: object
+      required: [id, authorId, authorName, role, text, createdAt]
+      properties:
+        id:
+          type: integer
+        authorId:
+          type: integer
+        authorName:
+          type: string
+        role:
+          type: string
+        text:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CommentInput:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    # ── Shared Goal ─────────────────────────────────────
+    SharedGoal:
+      type: object
+      required: [id, primaryOwnerId, goalTitle, goalDescription, target, unitOfMeasurement, linkedEmployeeIds, createdAt]
+      properties:
+        id:
+          type: integer
+        primaryOwnerId:
+          type: integer
+        primaryOwnerName:
+          type: ["string", "null"]
+        goalTitle:
+          type: string
+        goalDescription:
+          type: string
+        thrustArea:
+          type: string
+        target:
+          type: number
+        unitOfMeasurement:
+          type: string
+          enum: [numeric, percentage, timeline, zero_based]
+        linkedEmployeeIds:
+          type: array
+          items:
+            type: integer
+        linkedEmployeeNames:
+          type: array
+          items:
+            type: string
+        achievement:
+          type: ["number", "null"]
+        quarter:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    SharedGoalInput:
+      type: object
+      required: [primaryOwnerId, goalTitle, goalDescription, target, unitOfMeasurement, linkedEmployeeIds]
+      properties:
+        primaryOwnerId:
+          type: integer
+        goalTitle:
+          type: string
+        goalDescription:
+          type: string
+        thrustArea:
+          type: string
+        target:
+          type: number
+        unitOfMeasurement:
+          type: string
+          enum: [numeric, percentage, timeline, zero_based]
+        linkedEmployeeIds:
+          type: array
+          items:
+            type: integer
+        quarter:
+          type: string
+
+    SharedGoalUpdate:
+      type: object
+      properties:
+        achievement:
+          type: number
+        linkedEmployeeIds:
+          type: array
+          items:
+            type: integer
+
+    # ── Quarter ─────────────────────────────────────────
+    Quarter:
+      type: object
+      required: [id, name, year, startDate, endDate, isActive, isGoalSettingOpen]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        year:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isActive:
+          type: boolean
+        isGoalSettingOpen:
+          type: boolean
+        adminOverride:
+          type: boolean
+
+    QuarterInput:
+      type: object
+      required: [name, year, startDate, endDate]
+      properties:
+        name:
+          type: string
+        year:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isActive:
+          type: boolean
+        isGoalSettingOpen:
+          type: boolean
+
+    QuarterUpdate:
+      type: object
+      properties:
+        isActive:
+          type: boolean
+        isGoalSettingOpen:
+          type: boolean
+        adminOverride:
+          type: boolean
+
+    # ── Notification ────────────────────────────────────
+    Notification:
+      type: object
+      required: [id, userId, type, title, message, isRead, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [goal_submitted, goal_approved, goal_rejected, goal_returned, quarterly_reminder, escalation, system]
+        title:
+          type: string
+        message:
+          type: string
+        isRead:
+          type: boolean
+        relatedGoalId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+
+    # ── Audit Log ───────────────────────────────────────
+    AuditLog:
+      type: object
+      required: [id, userId, action, changedField, timestamp]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: ["string", "null"]
+        role:
+          type: string
+        goalId:
+          type: ["integer", "null"]
+        goalTitle:
+          type: ["string", "null"]
+        action:
+          type: string
+        changedField:
+          type: ["string", "null"]
+        oldValue:
+          type: ["string", "null"]
+        newValue:
+          type: ["string", "null"]
+        timestamp:
+          type: string
+          format: date-time
+
+    # ── Analytics ────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      required: [totalGoals, pendingApprovals, approvedGoals, completedGoals, overallScore]
+      properties:
+        totalGoals:
+          type: integer
+        pendingApprovals:
+          type: integer
+        approvedGoals:
+          type: integer
+        completedGoals:
+          type: integer
+        draftGoals:
+          type: integer
+        rejectedGoals:
+          type: integer
+        overallScore:
+          type: number
+        totalEmployees:
+          type: ["integer", "null"]
+        teamSize:
+          type: ["integer", "null"]
+        pendingCheckIns:
+          type: ["integer", "null"]
+        currentQuarter:
+          type: ["string", "null"]
+
+    CompletionStat:
+      type: object
+      required: [label, total, completed, percentage]
+      properties:
+        label:
+          type: string
+        total:
+          type: integer
+        completed:
+          type: integer
+        percentage:
+          type: number
+
+    DeptPerformance:
+      type: object
+      required: [department, avgScore, totalEmployees, totalGoals]
+      properties:
+        department:
+          type: string
+        avgScore:
+          type: number
+        totalEmployees:
+          type: integer
+        totalGoals:
+          type: integer
+        completedGoals:
+          type: integer
+
+    EmployeeScore:
+      type: object
+      required: [employeeId, employeeName, department, weightedScore, totalGoals]
+      properties:
+        employeeId:
+          type: integer
+        employeeName:
+          type: string
+        department:
+          type: string
+        managerName:
+          type: ["string", "null"]
+        weightedScore:
+          type: number
+        totalGoals:
+          type: integer
+        completedGoals:
+          type: integer
+        quarter:
+          type: ["string", "null"]
+
+    PendingActions:
+      type: object
+      required: [pendingSubmissions, pendingApprovals, pendingCheckIns, overdueGoals]
+      properties:
+        pendingSubmissions:
+          type: integer
+        pendingApprovals:
+          type: integer
+        pendingCheckIns:
+          type: integer
+        overdueGoals:
+          type: integer
+
+    TrendPoint:
+      type: object
+      required: [quarter, avgScore]
+      properties:
+        quarter:
+          type: string
+        avgScore:
+          type: number
+        completed:
+          type: integer
+        total:
+          type: integer
+
+    UomStat:
+      type: object
+      required: [uom, count, avgScore]
+      properties:
+        uom:
+          type: string
+        count:
+          type: integer
+        avgScore:
+          type: number
+
+    # ── Department ──────────────────────────────────────
+    Department:
+      type: object
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        headId:
+          type: ["integer", "null"]
+        headName:
+          type: ["string", "null"]
+
+    DepartmentInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        headId:
+          type: ["integer", "null"]
+
+    # ── Escalation ──────────────────────────────────────
+    Escalation:
+      type: object
+      required: [id, type, employeeId, createdAt, resolved]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [missed_submission, delayed_approval, incomplete_checkin]
+        employeeId:
+          type: integer
+        employeeName:
+          type: ["string", "null"]
+        managerId:
+          type: ["integer", "null"]
+        managerName:
+          type: ["string", "null"]
+        description:
+          type: string
+        resolved:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
