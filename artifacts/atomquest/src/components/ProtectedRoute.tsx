@@ -1,23 +1,22 @@
-import { useEffect } from "react";
+import { Redirect } from "wouter";
 import { useAuth } from "@/context/AuthContext";
-import { useLocation } from "wouter";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, token, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
-
-  useEffect(() => {
-    if (!isLoading && !token) {
-      setLocation("/login");
-    }
-  }, [isLoading, token, setLocation]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-500 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!user || !token) {
-    return null; // Will redirect in useEffect
+  if (!token || !user) {
+    return <Redirect to="/login" />;
   }
 
   return <>{children}</>;

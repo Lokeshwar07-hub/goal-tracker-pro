@@ -1,4 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -49,7 +49,7 @@ function ProtectedRoutes() {
         <Route path="/admin/escalations" component={AdminEscalations} />
         <Route path="/shared-goals" component={SharedGoals} />
         <Route path="/settings" component={Settings} />
-        <Route path="/" component={() => { window.location.href = "/dashboard"; return null; }} />
+        <Route path="/" component={() => { return <Redirect to="/dashboard" />; }} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
