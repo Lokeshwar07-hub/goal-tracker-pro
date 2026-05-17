@@ -8,18 +8,26 @@
     "./schema": "./src/schema/index.ts"
   },
   "scripts": {
-    "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "check": "tsx ./src/check-connection.ts",
+    "push": "tsx ./src/check-connection.ts && drizzle-kit push --config ./drizzle.config.ts",
+    "push-force": "tsx ./src/check-connection.ts && drizzle-kit push --force --config ./drizzle.config.ts",
+    "seed": "tsx ./src/check-connection.ts && tsx ./src/seed.ts",
+    "setup": "pnpm run push && pnpm run seed"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "better-sqlite3": "^11.10.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.6.1",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
-    "pg": "^8.20.0",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "catalog:",
-    "@types/pg": "^8.20.0",
-    "drizzle-kit": "^0.31.10"
+    "drizzle-kit": "^0.31.10",
+    "tsx": "catalog:"
   }
 }

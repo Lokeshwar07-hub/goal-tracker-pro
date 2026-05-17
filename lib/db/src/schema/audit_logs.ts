@@ -1,9 +1,9 @@
-import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const auditLogsTable = pgTable("audit_logs", {
-  id: serial("id").primaryKey(),
+export const auditLogsTable = sqliteTable("audit_logs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull(),
   role: text("role").notNull().default("employee"),
   goalId: integer("goal_id"),
@@ -11,9 +11,14 @@ export const auditLogsTable = pgTable("audit_logs", {
   changedField: text("changed_field"),
   oldValue: text("old_value"),
   newValue: text("new_value"),
-  timestamp: timestamp("timestamp", { withTimezone: true }).notNull().defaultNow(),
+  timestamp: integer("timestamp", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
-export const insertAuditLogSchema = createInsertSchema(auditLogsTable).omit({ id: true, timestamp: true });
+export const insertAuditLogSchema = createInsertSchema(auditLogsTable).omit({
+  id: true,
+  timestamp: true,
+});
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type AuditLog = typeof auditLogsTable.$inferSelect;

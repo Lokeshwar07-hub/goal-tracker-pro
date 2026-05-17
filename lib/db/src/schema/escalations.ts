@@ -1,17 +1,22 @@
-import { pgTable, text, serial, timestamp, integer, boolean } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const escalationsTable = pgTable("escalations", {
-  id: serial("id").primaryKey(),
+export const escalationsTable = sqliteTable("escalations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   type: text("type").notNull(),
   employeeId: integer("employee_id").notNull(),
   managerId: integer("manager_id"),
   description: text("description").notNull().default(""),
-  resolved: boolean("resolved").notNull().default(false),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  resolved: integer("resolved", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
 });
 
-export const insertEscalationSchema = createInsertSchema(escalationsTable).omit({ id: true, createdAt: true });
+export const insertEscalationSchema = createInsertSchema(escalationsTable).omit({
+  id: true,
+  createdAt: true,
+});
 export type InsertEscalation = z.infer<typeof insertEscalationSchema>;
 export type Escalation = typeof escalationsTable.$inferSelect;

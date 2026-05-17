@@ -29,7 +29,7 @@ export default function Notifications() {
           <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
           <p className="text-muted-foreground mt-1">Stay updated on your goals and approvals.</p>
         </div>
-        <Button variant="outline" onClick={() => markAllRead.mutate({})} disabled={markAllRead.isPending}>
+        <Button variant="outline" onClick={() => markAllRead.mutate()} disabled={markAllRead.isPending}>
           <CheckCircle2 className="w-4 h-4 mr-2" />
           Mark all as read
         </Button>

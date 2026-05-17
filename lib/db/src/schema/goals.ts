@@ -1,9 +1,9 @@
-import { pgTable, text, serial, timestamp, integer, real, boolean, jsonb } from "drizzle-orm/pg-core";
+import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const goalsTable = pgTable("goals", {
-  id: serial("id").primaryKey(),
+export const goalsTable = sqliteTable("goals", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
   employeeId: integer("employee_id").notNull(),
   thrustArea: text("thrust_area").notNull(),
   goalTitle: text("goal_title").notNull(),
@@ -16,16 +16,31 @@ export const goalsTable = pgTable("goals", {
   achievement: real("achievement"),
   progressScore: real("progress_score"),
   approvalStatus: text("approval_status").notNull().default("draft"),
-  lockStatus: boolean("lock_status").notNull().default(false),
+  lockStatus: integer("lock_status", { mode: "boolean" }).notNull().default(false),
   quarter: text("quarter"),
-  quarterlyUpdates: jsonb("quarterly_updates").notNull().default([]),
-  comments: jsonb("comments").notNull().default([]),
-  isShared: boolean("is_shared").notNull().default(false),
+  quarterlyUpdates: text("quarterly_updates", { mode: "json" })
+    .notNull()
+    .$type<unknown[]>()
+    .default([]),
+  comments: text("comments", { mode: "json" })
+    .notNull()
+    .$type<unknown[]>()
+    .default([]),
+  isShared: integer("is_shared", { mode: "boolean" }).notNull().default(false),
   sharedGoalId: integer("shared_goal_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date())
+    .$onUpdateFn(() => new Date()),
 });
 
-export const insertGoalSchema = createInsertSchema(goalsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertGoalSchema = createInsertSchema(goalsTable).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
 export type InsertGoal = z.infer<typeof insertGoalSchema>;
 export type Goal = typeof goalsTable.$inferSelect;

@@ -1,14 +1,22 @@
+import "./src/load-env.ts";
 import { defineConfig } from "drizzle-kit";
-import path from "path";
-
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL, ensure the database is provisioned");
-}
+import { resolveDatabaseUrl } from "./src/database-url.ts";
 
 export default defineConfig({
-  schema: path.join(__dirname, "./src/schema/index.ts"),
-  dialect: "postgresql",
+  schema: [
+    "./src/schema/users.ts",
+    "./src/schema/goals.ts",
+    "./src/schema/shared_goals.ts",
+    "./src/schema/quarters.ts",
+    "./src/schema/notifications.ts",
+    "./src/schema/audit_logs.ts",
+    "./src/schema/departments.ts",
+    "./src/schema/escalations.ts",
+  ],
+  out: "./drizzle",
+  dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    // Absolute file: URL — required on Windows (no relative ./data paths)
+    url: resolveDatabaseUrl(),
   },
 });

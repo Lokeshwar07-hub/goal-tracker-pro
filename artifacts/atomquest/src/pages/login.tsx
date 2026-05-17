@@ -38,12 +38,20 @@ export default function Login() {
         setLocation("/dashboard");
       },
       onError: (error) => {
-        toast({ 
-          variant: "destructive", 
-          title: "Login failed", 
-          description: error.message || "Invalid credentials. Please try again." 
+        const msg = error.message ?? "";
+        const description =
+          msg.includes("Failed to fetch") || msg.includes("NetworkError")
+            ? "Cannot reach the API. From the project root run: pnpm run dev (or pnpm run dev:api in a second terminal)."
+            : msg.includes("401") || msg.toLowerCase().includes("invalid")
+              ? "Invalid email or password. If this is a fresh install, run: pnpm run db:setup"
+              : msg || "Invalid credentials. Please try again.";
+
+        toast({
+          variant: "destructive",
+          title: "Login failed",
+          description,
         });
-      }
+      },
     }
   });
 

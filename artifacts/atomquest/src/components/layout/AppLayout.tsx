@@ -24,7 +24,10 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useListNotifications } from "@workspace/api-client-react";
+import {
+  useListNotifications,
+  getListNotificationsQueryOptions,
+} from "@workspace/api-client-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -33,7 +36,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const { data: notifications } = useListNotifications(
     { unreadOnly: true },
-    { query: { enabled: !!user } }
+    {
+      query: {
+        ...getListNotificationsQueryOptions({ unreadOnly: true }),
+        enabled: !!user,
+      },
+    },
   );
 
   const unreadCount = notifications?.length || 0;

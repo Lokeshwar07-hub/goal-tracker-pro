@@ -1,4 +1,4 @@
-import { useGetGoal } from "@workspace/api-client-react";
+import { useGetGoal, getGetGoalQueryOptions } from "@workspace/api-client-react";
 import { useRoute } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,7 +8,10 @@ export default function GoalDetail() {
   const id = params?.id ? parseInt(params.id, 10) : 0;
   
   const { data: goal, isLoading } = useGetGoal(id, {
-    query: { enabled: !!id }
+    query: {
+      ...getGetGoalQueryOptions(id),
+      enabled: !!id,
+    },
   });
 
   if (isLoading) return <div className="p-8 space-y-4"><Skeleton className="h-12 w-1/3"/><Skeleton className="h-64 w-full"/></div>;

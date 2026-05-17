@@ -29,8 +29,11 @@ async function buildAll() {
     // - use path traversal to read files (e.g. @google-cloud/secret-manager loads sibling .proto files)
     external: [
       "*.node",
-      "sharp",
+      "@libsql/client",
+      "@libsql/*",
+      "libsql",
       "better-sqlite3",
+      "sharp",
       "sqlite3",
       "canvas",
       "bcrypt",

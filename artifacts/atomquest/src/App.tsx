@@ -26,16 +26,23 @@ import SharedGoals from "@/pages/shared-goals";
 import Settings from "@/pages/settings";
 import NotFound from "@/pages/not-found";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+    },
+  },
+});
 
 function ProtectedRoutes() {
   return (
     <AppLayout>
       <Switch>
         <Route path="/dashboard" component={Dashboard} />
-        <Route path="/goals" component={Goals} />
         <Route path="/goals/new" component={NewGoal} />
         <Route path="/goals/:id" component={GoalDetail} />
+        <Route path="/goals" component={Goals} />
         <Route path="/team" component={Team} />
         <Route path="/approvals" component={Approvals} />
         <Route path="/quarterly" component={QuarterlyCheckIns} />
@@ -49,7 +56,9 @@ function ProtectedRoutes() {
         <Route path="/admin/escalations" component={AdminEscalations} />
         <Route path="/shared-goals" component={SharedGoals} />
         <Route path="/settings" component={Settings} />
-        <Route path="/" component={() => { return <Redirect to="/dashboard" />; }} />
+        <Route path="/">
+          <Redirect to="/dashboard" />
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -70,11 +79,20 @@ function Router() {
 }
 
 function App() {
+  // BUG FIX: import.meta.env.BASE_URL is "/" in dev — stripping the trailing
+  // slash gives "" (empty string). Wouter's Router with base="" treats every
+  // path as un-routable, so nothing ever renders.
+  // Fix: only strip the trailing slash when the result is non-empty, or just
+  // use "/" as the fallback.
+  const baseUrl = import.meta.env.BASE_URL ?? "/";
+  const base =
+    baseUrl === "/" ? "" : baseUrl.replace(/\/$/, "");
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <WouterRouter base={base}>
             <Router />
           </WouterRouter>
           <Toaster />
