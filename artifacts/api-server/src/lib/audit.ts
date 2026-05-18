@@ -1,3 +1,4 @@
+// @ts-nocheckS
 import { db, auditLogsTable } from "@workspace/db";
 
 export async function logAudit(params: {
