@@ -1,6 +1,11 @@
-// @ts-nocheckS
-import { db, auditLogsTable } from "@workspace/db";
+// @ts-nocheck
+import * as dbModule from "@workspace/db";
 
+const db = (dbModule as any).db;
+const auditLogsTable =
+  (dbModule as any).auditLogsTable ??
+  (dbModule as any).audit_logsTable;
+  
 export async function logAudit(params: {
   userId: number;
   role: string;
