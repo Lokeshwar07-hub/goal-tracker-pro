@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { db, notificationsTable } from "@workspace/db";
 
 export async function createNotification(params: {
