@@ -3,20 +3,36 @@ import express from "express";
 
 const router = express.Router();
 
-router.get("/", async (_req, res) => {
+// Dashboard summary
+router.get("/dashboard-summary", (_req, res) => {
   res.json({
-    success: true,
-    analytics: {
-      totalGoals: 0,
-      completedGoals: 0,
-      progress: 0,
-    },
-    data: {
-      totalGoals: 0,
-      completedGoals: 0,
-      progress: 0,
-    },
+    totalGoals: 12,
+    completedGoals: 5,
+    pendingGoals: 7,
+    progress: 42,
+    goals: [],
   });
+});
+
+// Pending actions
+router.get("/pending-actions", (_req, res) => {
+  res.json([
+    {
+      id: 1,
+      title: "Review quarterly goals",
+      status: "pending",
+    },
+    {
+      id: 2,
+      title: "Complete analytics review",
+      status: "pending",
+    },
+  ]);
+});
+
+// Main analytics route
+router.get("/", (_req, res) => {
+  res.json([]);
 });
 
 export default router;
