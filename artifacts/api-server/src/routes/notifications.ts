@@ -4,9 +4,10 @@ import express from "express";
 const router = express.Router();
 
 router.get("/", async (_req, res) => {
-  res.send({
+  res.json({
     success: true,
     notifications: [],
+    data: [],
   });
 });
 

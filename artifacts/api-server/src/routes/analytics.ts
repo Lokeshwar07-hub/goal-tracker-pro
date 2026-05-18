@@ -4,9 +4,18 @@ import express from "express";
 const router = express.Router();
 
 router.get("/", async (_req, res) => {
-  res.send({
+  res.json({
     success: true,
-    analytics: {},
+    analytics: {
+      totalGoals: 0,
+      completedGoals: 0,
+      progress: 0,
+    },
+    data: {
+      totalGoals: 0,
+      completedGoals: 0,
+      progress: 0,
+    },
   });
 });
 
