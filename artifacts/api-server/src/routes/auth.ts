@@ -7,7 +7,7 @@ router.post("/login", async (req, res) => {
   const { email } = req.body || {};
 
   let role = "employee";
-  let name = "User";
+  let name = "Sarah Johnson";
 
   if (email?.includes("raj")) {
     role = "manager";
@@ -19,20 +19,33 @@ router.post("/login", async (req, res) => {
     name = "Admin User";
   }
 
-  res.send({
+  const user = {
+    id: 1,
+    name,
+    email: email || "demo@atomquest.com",
+    role,
+  };
+
+  res.json({
     success: true,
-    token: "demo-token",
-    user: {
-      id: 1,
-      name,
-      email: email || "demo@atomquest.com",
-      role,
-    },
+    token: "demo-token-123",
+    accessToken: "demo-token-123",
+    user,
+    data: user,
+  });
+});
+
+router.get("/me", async (_req, res) => {
+  res.json({
+    id: 1,
+    name: "Raj Patel",
+    email: "raj.patel@atomquest.com",
+    role: "manager",
   });
 });
 
 router.post("/register", async (_req, res) => {
-  res.send({
+  res.json({
     success: true,
   });
 });
