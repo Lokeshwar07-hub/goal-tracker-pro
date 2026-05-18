@@ -3,12 +3,8 @@ import express from "express";
 
 const router = express.Router();
 
-router.get("/", async (_req, res) => {
-  res.json({
-    success: true,
-    notifications: [],
-    data: [],
-  });
+router.get("/", (_req, res) => {
+  res.json([]);
 });
 
 export default router;
