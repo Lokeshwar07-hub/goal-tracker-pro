@@ -1,11 +1,10 @@
-// @ts-nocheck
-import { Router } from "express";
 import { db, quartersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 import { CreateQuarterBody, UpdateQuarterParams, UpdateQuarterBody } from "@workspace/api-zod";
+import { createRouter } from "../lib/router.js";
 
-const router = Router();
+const router = createRouter();
 
 router.get("/", requireAuth, async (req, res) => {
   const quarters = await db.select().from(quartersTable).orderBy(quartersTable.year, quartersTable.name);

@@ -1,11 +1,10 @@
-// @ts-nocheck
-import { Router } from "express";
 import { db, auditLogsTable, usersTable, goalsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 import { ListAuditLogsQueryParams } from "@workspace/api-zod";
+import { createRouter } from "../lib/router.js";
 
-const router = Router();
+const router = createRouter();
 
 router.get("/", requireAuth, requireRole("manager", "admin"), async (req, res) => {
   const parsed = ListAuditLogsQueryParams.safeParse(req.query);

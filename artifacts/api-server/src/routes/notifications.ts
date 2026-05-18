@@ -1,11 +1,10 @@
-// @ts-nocheck
-import { Router } from "express";
 import { db, notificationsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth } from "../middlewares/auth.js";
 import { ListNotificationsQueryParams, MarkNotificationReadParams } from "@workspace/api-zod";
+import { createRouter } from "../lib/router.js";
 
-const router = Router();
+const router = createRouter();
 
 router.get("/", requireAuth, async (req, res) => {
   const parsed = ListNotificationsQueryParams.safeParse(req.query);

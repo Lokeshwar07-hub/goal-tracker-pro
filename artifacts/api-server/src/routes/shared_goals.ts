@@ -1,8 +1,7 @@
-// @ts-nocheck
-import { Router } from "express";
 import { db, sharedGoalsTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
+import { createRouter } from "../lib/router.js";
 import {
   CreateSharedGoalBody,
   GetSharedGoalParams,
@@ -10,11 +9,11 @@ import {
   UpdateSharedGoalBody,
 } from "@workspace/api-zod";
 
-const router = Router();
+const router = createRouter();
 
 async function formatSharedGoal(sg: typeof sharedGoalsTable.$inferSelect) {
   const [owner] = await db.select().from(usersTable).where(eq(usersTable.id, sg.primaryOwnerId)).limit(1);
-  const ids = (sg.linkedEmployeeIds as number[]) || [];
+  const ids = sg.linkedEmployeeIds ?? [];
   const linked = ids.length > 0
     ? await db.select().from(usersTable).where(eq(usersTable.id, ids[0]))
     : [];

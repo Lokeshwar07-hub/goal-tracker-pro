@@ -1,12 +1,11 @@
-// @ts-nocheck
-import { Router } from "express";
 import bcrypt from "bcryptjs";
+import { createRouter } from "../lib/router.js";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, signToken } from "../middlewares/auth.js";
 import { LoginBody } from "@workspace/api-zod";
 
-const router = Router();
+const router = createRouter();
 
 router.post("/login", async (req, res) => {
   try {

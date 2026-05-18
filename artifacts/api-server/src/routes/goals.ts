@@ -1,10 +1,10 @@
-// @ts-nocheck
-import { Router } from "express";
-import { db, goalsTable, usersTable, notificationsTable } from "@workspace/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { db, goalsTable, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 import { logAudit } from "../lib/audit.js";
 import { createNotification } from "../lib/notify.js";
+import { asGoalComments, asQuarterlyUpdates } from "../lib/json-fields.js";
+import { createRouter } from "../lib/router.js";
 import {
   ListGoalsQueryParams,
   CreateGoalBody,
@@ -26,7 +26,7 @@ import {
   AddGoalCommentBody,
 } from "@workspace/api-zod";
 
-const router = Router();
+const router = createRouter();
 
 function computeProgress(goal: {
   unitOfMeasurement: string;
@@ -243,7 +243,7 @@ router.post("/:id/approve", requireAuth, requireRole("manager", "admin"), async 
   if (body.data.weightageOverride !== null && body.data.weightageOverride !== undefined) updates.weightage = body.data.weightageOverride;
 
   // Add manager comment
-  const existing = (goal.comments as any[]) || [];
+  const existing = asGoalComments(goal.comments);
   existing.push({ id: Date.now(), authorId: req.user!.id, authorName: req.user!.name, role: req.user!.role, text: body.data.comment, createdAt: new Date().toISOString() });
   updates.comments = existing;
 
@@ -264,7 +264,7 @@ router.post("/:id/reject", requireAuth, requireRole("manager", "admin"), async (
   const [goal] = await db.select().from(goalsTable).where(eq(goalsTable.id, params.data.id)).limit(1);
   if (!goal) { res.status(404).json({ error: "Goal not found" }); return; }
 
-  const existing = (goal.comments as any[]) || [];
+  const existing = asGoalComments(goal.comments);
   existing.push({ id: Date.now(), authorId: req.user!.id, authorName: req.user!.name, role: req.user!.role, text: body.data.comment, createdAt: new Date().toISOString() });
 
   const [updated] = await db.update(goalsTable).set({ approvalStatus: "rejected", comments: existing }).where(eq(goalsTable.id, goal.id)).returning();
@@ -284,7 +284,7 @@ router.post("/:id/return", requireAuth, requireRole("manager", "admin"), async (
   const [goal] = await db.select().from(goalsTable).where(eq(goalsTable.id, params.data.id)).limit(1);
   if (!goal) { res.status(404).json({ error: "Goal not found" }); return; }
 
-  const existing = (goal.comments as any[]) || [];
+  const existing = asGoalComments(goal.comments);
   existing.push({ id: Date.now(), authorId: req.user!.id, authorName: req.user!.name, role: req.user!.role, text: body.data.comment, createdAt: new Date().toISOString() });
 
   const [updated] = await db.update(goalsTable).set({ approvalStatus: "returned", lockStatus: false, comments: existing }).where(eq(goalsTable.id, goal.id)).returning();
@@ -317,8 +317,8 @@ router.post("/:id/quarterly-update", requireAuth, async (req, res) => {
   const [goal] = await db.select().from(goalsTable).where(eq(goalsTable.id, params.data.id)).limit(1);
   if (!goal) { res.status(404).json({ error: "Goal not found" }); return; }
 
-  const existing = (goal.quarterlyUpdates as any[]) || [];
-  const idx = existing.findIndex((u: any) => u.quarter === body.data.quarter);
+  const existing = asQuarterlyUpdates(goal.quarterlyUpdates);
+  const idx = existing.findIndex((u) => u.quarter === body.data.quarter);
   const progressScore = computeProgress({ ...goal, achievement: body.data.achievement });
   const entry = { quarter: body.data.quarter, achievement: body.data.achievement, progressStatus: body.data.progressStatus, progressScore, managerComment: null, updatedAt: new Date().toISOString() };
 
@@ -340,7 +340,7 @@ router.post("/:id/comments", requireAuth, async (req, res) => {
   const [goal] = await db.select().from(goalsTable).where(eq(goalsTable.id, params.data.id)).limit(1);
   if (!goal) { res.status(404).json({ error: "Goal not found" }); return; }
 
-  const existing = (goal.comments as any[]) || [];
+  const existing = asGoalComments(goal.comments);
   existing.push({ id: Date.now(), authorId: req.user!.id, authorName: req.user!.name, role: req.user!.role, text: body.data.text, createdAt: new Date().toISOString() });
 
   const [updated] = await db.update(goalsTable).set({ comments: existing }).where(eq(goalsTable.id, goal.id)).returning();

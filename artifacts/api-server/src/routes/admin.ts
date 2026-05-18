@@ -1,11 +1,10 @@
-// @ts-nocheck
-import { Router } from "express";
 import { db, departmentsTable, escalationsTable, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 import { CreateDepartmentBody } from "@workspace/api-zod";
+import { createRouter } from "../lib/router.js";
 
-const router = Router();
+const router = createRouter();
 
 // Departments
 router.get("/departments", requireAuth, async (req, res) => {

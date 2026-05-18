@@ -1,8 +1,7 @@
-// @ts-nocheck
-import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, type SQL } from "drizzle-orm";
+import { createRouter } from "../lib/router.js";
 import { requireAuth, requireRole } from "../middlewares/auth.js";
 import {
   ListUsersQueryParams,
@@ -13,7 +12,7 @@ import {
   DeleteUserParams,
 } from "@workspace/api-zod";
 
-const router = Router();
+const router = createRouter();
 
 async function formatUser(user: typeof usersTable.$inferSelect) {
   let managerName: string | null = null;
@@ -50,12 +49,14 @@ router.get("/", requireAuth, async (req, res) => {
 
   let query = db.select().from(usersTable).$dynamic();
 
-  const conditions = [];
+  const conditions: SQL[] = [];
   if (params.role) conditions.push(eq(usersTable.role, params.role));
   if (params.department) conditions.push(eq(usersTable.department, params.department));
   if (params.managerId) conditions.push(eq(usersTable.managerId, Number(params.managerId)));
 
-  if (conditions.length > 0) {
+  if (conditions.length === 1) {
+    query = query.where(conditions[0]!);
+  } else if (conditions.length > 1) {
     query = query.where(and(...conditions));
   }
 

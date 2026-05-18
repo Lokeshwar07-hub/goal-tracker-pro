@@ -8,15 +8,9 @@
     "types": ["node"],
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "noImplicitAny": false,
-    "strict": false
+    "skipLibCheck": true
   },
   "include": ["src"],
-  "exclude": [
-    "src/lib/**/*.ts",
-    "src/routes/**/*.ts"
-  ],
   "references": [
     {
       "path": "../../lib/db"

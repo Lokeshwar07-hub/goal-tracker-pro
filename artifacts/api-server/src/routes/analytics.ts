@@ -1,12 +1,16 @@
-// @ts-nocheck
-import { Router } from "express";
-import { db, goalsTable, usersTable, quartersTable, escalationsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
-import { requireAuth, requireRole } from "../middlewares/auth.js";
+import { db, goalsTable, usersTable, quartersTable } from "@workspace/db";
+import { requireAuth } from "../middlewares/auth.js";
+import { asQuarterlyUpdates } from "../lib/json-fields.js";
+import { createRouter } from "../lib/router.js";
 
-const router = Router();
+const router = createRouter();
 
-function computeProgress(goal: any): number | null {
+type GoalProgressInput = Pick<
+  typeof goalsTable.$inferSelect,
+  "achievement" | "unitOfMeasurement" | "scoreType" | "target"
+>;
+
+function computeProgress(goal: GoalProgressInput): number | null {
   if (goal.achievement === null || goal.achievement === undefined) return null;
   const { unitOfMeasurement, scoreType, target, achievement } = goal;
   if (unitOfMeasurement === "zero_based") return achievement === 0 ? 100 : 0;
@@ -33,8 +37,8 @@ router.get("/dashboard-summary", requireAuth, async (req, res) => {
   const pendingApprovals = myGoals.filter((g) => g.approvalStatus === "pending").length;
   const approvedGoals = myGoals.filter((g) => g.approvalStatus === "approved").length;
   const completedGoals = myGoals.filter((g) => {
-    const updates = (g.quarterlyUpdates as any[]) || [];
-    return updates.some((u: any) => u.progressStatus === "completed");
+    const updates = asQuarterlyUpdates(g.quarterlyUpdates);
+    return updates.some((u) => u.progressStatus === "completed");
   }).length;
   const draftGoals = myGoals.filter((g) => g.approvalStatus === "draft").length;
   const rejectedGoals = myGoals.filter((g) => g.approvalStatus === "rejected").length;
@@ -45,7 +49,7 @@ router.get("/dashboard-summary", requireAuth, async (req, res) => {
   const quarters = await db.select().from(quartersTable);
   const activeQuarter = quarters.find((q) => q.isActive);
 
-  const response: any = {
+  res.json({
     totalGoals,
     pendingApprovals,
     approvedGoals,
@@ -54,16 +58,13 @@ router.get("/dashboard-summary", requireAuth, async (req, res) => {
     rejectedGoals,
     overallScore: Math.round(overallScore * 10) / 10,
     currentQuarter: activeQuarter?.name ?? null,
-  };
-
-  if (req.user!.role === "admin") {
-    response.totalEmployees = allUsers.filter((u) => u.role === "employee").length;
-  } else if (req.user!.role === "manager") {
-    const team = allUsers.filter((u) => u.managerId === req.user!.id);
-    response.teamSize = team.length;
-  }
-
-  res.json(response);
+    ...(req.user!.role === "admin"
+      ? { totalEmployees: allUsers.filter((u) => u.role === "employee").length }
+      : {}),
+    ...(req.user!.role === "manager"
+      ? { teamSize: allUsers.filter((u) => u.managerId === req.user!.id).length }
+      : {}),
+  });
 });
 
 // Goal completion stats
@@ -85,8 +86,8 @@ router.get("/goal-completion", requireAuth, async (req, res) => {
     if (!deptMap.has(dept)) deptMap.set(dept, { total: 0, completed: 0 });
     const entry = deptMap.get(dept)!;
     entry.total++;
-    const updates = (goal.quarterlyUpdates as any[]) || [];
-    if (updates.some((u: any) => u.progressStatus === "completed")) entry.completed++;
+    const updates = asQuarterlyUpdates(goal.quarterlyUpdates);
+    if (updates.some((u) => u.progressStatus === "completed")) entry.completed++;
   }
 
   const result = Array.from(deptMap.entries()).map(([label, { total, completed }]) => ({
@@ -118,8 +119,8 @@ router.get("/department-performance", requireAuth, async (req, res) => {
     entry.total++;
     const score = computeProgress(goal);
     if (score !== null) entry.scores.push(score);
-    const updates = (goal.quarterlyUpdates as any[]) || [];
-    if (updates.some((u: any) => u.progressStatus === "completed")) entry.completed++;
+    const updates = asQuarterlyUpdates(goal.quarterlyUpdates);
+    if (updates.some((u) => u.progressStatus === "completed")) entry.completed++;
   }
 
   const result = Array.from(deptMap.entries()).map(([department, { scores, employees, total, completed }]) => ({
@@ -168,8 +169,8 @@ router.get("/employee-scores", requireAuth, async (req, res) => {
 
     const manager = allUsers.find((u) => u.id === user.managerId);
     const completed = goals.filter((g) => {
-      const updates = (g.quarterlyUpdates as any[]) || [];
-      return updates.some((u: any) => u.progressStatus === "completed");
+      const updates = asQuarterlyUpdates(g.quarterlyUpdates);
+      return updates.some((u) => u.progressStatus === "completed");
     }).length;
 
     return {
@@ -204,7 +205,9 @@ router.get("/pending-actions", requireAuth, async (req, res) => {
   res.json({
     pendingSubmissions: goals.filter((g) => g.approvalStatus === "draft").length,
     pendingApprovals: goals.filter((g) => g.approvalStatus === "pending").length,
-    pendingCheckIns: goals.filter((g) => g.approvalStatus === "approved" && (!(g.quarterlyUpdates as any[])?.length)).length,
+    pendingCheckIns: goals.filter(
+      (g) => g.approvalStatus === "approved" && asQuarterlyUpdates(g.quarterlyUpdates).length === 0,
+    ).length,
     overdueGoals: goals.filter((g) => g.deadline && new Date(g.deadline) < new Date() && g.approvalStatus !== "approved").length,
   });
 });
@@ -230,8 +233,8 @@ router.get("/quarter-trend", requireAuth, async (req, res) => {
     entry.total++;
     const score = computeProgress(goal);
     if (score !== null) entry.scores.push(score);
-    const updates = (goal.quarterlyUpdates as any[]) || [];
-    if (updates.some((u: any) => u.progressStatus === "completed")) entry.completed++;
+    const updates = asQuarterlyUpdates(goal.quarterlyUpdates);
+    if (updates.some((u) => u.progressStatus === "completed")) entry.completed++;
   }
 
   const result = Array.from(quarterMap.entries())
